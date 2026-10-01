@@ -2,158 +2,126 @@
 
 # 🛡️ MaskShot
 
-### *Blazing-fast, 100% offline screenshot & clipboard secret sanitizer.*
+### *Auto-blur API keys, passwords, and emails in screenshots before posting.*
 
-Auto-detect and redact leaked API keys, tokens, credentials, and personal data in your screenshots before posting to X, GitHub, or Discord.
+Takes whatever is in your clipboard, blurs out leaked secrets, and puts it right back in **< 300ms**.
 
 [![Day 2 / 100](https://img.shields.io/badge/100_Days_Challenge-Day_002-blue?style=for-the-badge)](https://github.com/aotlover9-base-eth/100-days-100-problems-100-solutions)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Tesseract OCR](https://img.shields.io/badge/OCR-Tesseract_5.5-green?style=for-the-badge)](https://github.com/tesseract-ocr/tesseract)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
+<br/>
+
+![MaskShot Demo](maskshot_demo.png)
+
 </div>
 
 ---
 
-## 🎯 The Problem
+## ⚡ The Problem
 
-Developers and creators take dozens of screenshots daily to share code errors, terminal output, or dashboard previews on Twitter/X, GitHub issues, and Discord. 
+You take a screenshot of your terminal or code editor to ask a question on Twitter, Discord, or GitHub. 
+Without realizing it, your **OpenAI API key**, **database password**, or **phone number** is visible in the corner. 
 
-It is dangerously easy to accidentally leak:
-- **API Keys:** `sk-proj-...`, `ghp_...`, `AKIA...`
-- **Database URIs:** `postgres://user:password@...`
-- **Private Info:** Corporate emails, phone numbers, server IP addresses
-
-Cloud-based redaction tools defeat the purpose — sending your unredacted secrets over the internet to a third-party server is itself a security risk.
+Sending screenshots to cloud un-blur / redaction tools is risky because your secrets leave your computer.
 
 ---
 
-## 💡 The Solution
+## 💡 The Solution: MaskShot
 
-**MaskShot** runs **100% locally and offline**. It scans screenshots using local OCR (Tesseract 5.5) and applies intelligent regex pattern matching to detect and mask secrets in under **300ms**.
+**MaskShot is 100% offline.** It scans images on your local machine using local OCR (Tesseract), finds sensitive patterns, and masks them immediately.
 
-- ⚡ **Zero Cloud / $0 Cost:** Zero external API calls. Your images and tokens never leave your RAM.
-- 📋 **One-Click Clipboard Sanitizer (`maskshot clip`):** Grab whatever screenshot is in your clipboard, redact all secrets, and paste it back immediately.
-- 🎨 **Multiple Mask Styles:** Gaussian Blur, Retro Pixelation, or Solid Rounded Blackout with badges.
-- 🔔 **Native Desktop Alerts:** Integrated with Linux desktop notifications (`notify-send`).
-- 📁 **Folder Watcher (`maskshot watch`):** Monitors your screenshot folder and auto-sanitizes new screenshots silently in the background.
-
----
-
-## 📸 Before & After
-
-```
-BEFORE (Leaked Credentials)                 AFTER (MaskShot Sanitized)
-┌─────────────────────────────────┐         ┌─────────────────────────────────┐
-│ OPENAI_KEY = "sk-proj-9kL82..." │  ───►   │ OPENAI_KEY = "██████████████"   │
-│ DB_URL = "postgres://admin:..." │         │ DB_URL = "██████████████████"   │
-│ EMAIL = "founder@company.io"    │         │ EMAIL = "███████████████████"   │
-└─────────────────────────────────┘         └─────────────────────────────────┘
-```
+* **📋 Instant Clipboard Sanitizer (`maskshot clip`):** Copy any screenshot, run `maskshot clip`, and paste. Done.
+* **🔒 100% Offline & Free ($0):** No cloud APIs, no subscriptions. Everything runs locally in memory.
+* **🎨 3 Mask Styles:** Gaussian Blur, Retro Pixelate, or Blackout Boxes with labels.
+* **👀 Background Watcher:** Auto-scans and blurs new screenshots saved in your folder.
 
 ---
 
-## 🚀 Quickstart & Installation
+## 🚀 2-Minute Quickstart
 
-### 1. Prerequisites (Tesseract OCR)
-MaskShot uses Tesseract OCR for local character recognition:
-
+### 1. Install System OCR (Tesseract)
 ```bash
-# Arch / Manjaro
+# Ubuntu / Debian
+sudo apt install tesseract-ocr
+
+# Arch / CachyOS / Manjaro
 sudo pacman -S tesseract tesseract-data-eng
 
-# Ubuntu / Debian
-sudo apt install tesseract-ocr tesseract-ocr-eng
-
 # Fedora
-sudo dnf install tesseract tesseract-langpack-eng
+sudo dnf install tesseract
 ```
 
 ### 2. Install MaskShot
-
-Using `uv` (recommended):
 ```bash
-uv tool install git+https://github.com/aotlover9-base-eth/maskshot.git
+pip install git+https://github.com/aotlover9-base-eth/maskshot.git
+```
+*(Or if you use `uv`: `uv tool install git+https://github.com/aotlover9-base-eth/maskshot.git`)*
+
+---
+
+## 🛠️ How to Use
+
+### 1. The Fastest Way: Sanitize Clipboard
+Take a screenshot as usual (`PrintScreen` or your shortcut), then run:
+```bash
+maskshot clip
+```
+Now press `Ctrl + V` anywhere — all secrets are blurred!
+
+### 2. Sanitize an Image File
+```bash
+# Standard Blur
+maskshot sanitize screenshot.png -o clean.png
+
+# Retro Pixelate
+maskshot sanitize screenshot.png -s pixelate -o clean.png
+
+# Blackout with Category Labels
+maskshot sanitize screenshot.png -s blackout --badge -o clean.png
 ```
 
-Or via standard `pip`:
+### 3. Test on a Sample Demo Image
+Generate a test screenshot and see the before/after:
 ```bash
-git clone https://github.com/aotlover9-base-eth/maskshot.git
-cd maskshot
-pip install -e .
+maskshot demo -o test.png
 ```
 
 ---
 
-## 🛠️ Usage
+## 🧠 How Does MaskShot Know What to Mask?
 
-### 1. Sanitize Clipboard in 1 Second
-Take a screenshot (e.g. using `Spectacle`, `Flameshot`, `Grim`, or GNOME screenshot shortcut), then simply run:
+All rules are defined in [`src/maskshot/detector.py`](src/maskshot/detector.py). 
 
-```bash
-maskshot clip
-```
-*MaskShot immediately reads your clipboard, masks every detected secret, replaces the clipboard image, and pops up a desktop notification with the redacted count.*
+MaskShot uses high-accuracy **regular expressions (Regex)** designed specifically for credentials and PII:
 
-### 2. Sanitize an Image File
-```bash
-# Default Gaussian blur
-maskshot sanitize screenshot.png
+| Type | How It Detects | Examples |
+|:---|:---|:---|
+| **AI Keys** | `sk-proj-...` or `sk-ant-...` followed by 20+ characters | OpenAI, Anthropic Claude |
+| **Cloud Tokens** | `ghp_...`, `AKIA...`, `AIza...`, `hf_...` | GitHub PAT, AWS, Google Cloud, HuggingFace |
+| **Databases** | `postgres://`, `mongodb://`, `mysql://`, `redis://` | Database URLs with passwords |
+| **Auth** | `xoxb-...`, `sk_live_...`, `eyJ...` | Slack tokens, Stripe keys, JWTs, Private keys |
+| **PII** | Email pattern (`user@domain.com`), 10-digit phone numbers (`+91...`), IPv4 addresses | Emails, Phone numbers, Server IPs |
+| **Config** | `password = "..."` or `SECRET_KEY = "..."` | Any password assigned in code or `.env` files |
 
-# Custom output file
-maskshot sanitize screenshot.png -o clean_screenshot.png
-
-# Retro Pixelate style
-maskshot sanitize screenshot.png -s pixelate
-
-# Solid Blackout style with secret badges
-maskshot sanitize screenshot.png -s blackout --badge
-```
-
-### 3. Background Watcher Mode
-Automatically monitor your screenshot folder and sanitize every screenshot as soon as it's saved:
-
-```bash
-maskshot watch ~/Pictures/Screenshots
-```
-
-### 4. View All Detectable Secret Types
+To see the live rules in your terminal:
 ```bash
 maskshot rules
 ```
 
-### 5. Generate a Demo Card
-Test MaskShot locally on a synthetic mock environment file:
-```bash
-maskshot demo -s blur -o demo.png
-```
-
 ---
 
-## 🔍 Supported Secret Types
+## ⌨️ Shortcut Tip (1-Tap Sanitize)
 
-| Category | Patterns Detected |
-|:---|:---|
-| **AI & LLM Keys** | OpenAI (`sk-proj-...`, `sk-...`), Anthropic Claude (`sk-ant-...`) |
-| **Cloud & DevOps** | GitHub PAT (`ghp_...`, `github_pat_...`), AWS Access Keys (`AKIA...`), Google Cloud (`AIza...`), HuggingFace (`hf_...`) |
-| **Auth & Security** | Slack Tokens (`xoxb-...`), Stripe Keys (`sk_live_...`), JWT Tokens (`eyJ...`), SSH/RSA Private Keys |
-| **Databases** | Connection strings (`postgres://`, `mongodb://`, `mysql://`, `redis://`) |
-| **PII & Network** | Email addresses, Phone numbers (International & Indian standard), IPv4 network addresses |
-| **Config Secrets** | Environment variable password assignments (`password = "..."`, `SECRET_KEY = "..."`) |
+Set `maskshot clip` as a global hotkey (e.g. `Super + Shift + C`):
+1. Open **Settings -> Keyboard -> Keyboard Shortcuts**.
+2. Add a new custom shortcut with command: `maskshot clip`.
+3. Set shortcut to **`Super + Shift + C`**.
 
----
-
-## ⌨️ Pro-Tip: Hotkey Integration (Linux)
-
-Bind `maskshot clip` to a global keyboard shortcut (like `Super + Shift + C` or `Ctrl + Alt + M`):
-1. Go to your system **Settings -> Keyboard -> Custom Shortcuts**.
-2. Add Command: `maskshot clip`
-3. Set Shortcut: `Super + Shift + C`
-
-Now, whenever you capture a screenshot, tap `Super + Shift + C` — your clipboard is instantly sanitized and ready to paste anywhere safely!
+Now anytime you capture a screenshot, tap `Super + Shift + C` to sanitize it in 1 second!
 
 ---
 
 ## 📜 License
-
-MIT License © 2026 Nikhil Gupta ([@aotlover9-base-eth](https://github.com/aotlover9-base-eth)). Built as part of the **100 Days, 100 Problems, 100 Solutions** challenge.
+MIT License © 2026 Nikhil Gupta. Built as Day 2 of the **100 Days, 100 Problems, 100 Solutions** challenge.
