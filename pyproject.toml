@@ -1,0 +1,29 @@
+[project]
+name = "maskshot"
+version = "0.1.0"
+description = "Blazing-fast, 100% offline screenshot and clipboard secret sanitizer. Auto-redacts API keys, tokens, emails, and credentials before posting online."
+readme = "README.md"
+authors = [
+    { name = "Nikhil Gupta", email = "aotlover9-base-eth@users.noreply.github.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.5.0",
+    "pillow>=12.3.0",
+    "pytesseract>=0.3.13",
+    "pyyaml>=6.0.3",
+    "rich>=15.0.0",
+    "watchdog>=6.0.0",
+]
+
+[project.scripts]
+maskshot = "maskshot.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
