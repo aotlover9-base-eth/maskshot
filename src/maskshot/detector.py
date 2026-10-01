@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Optional, Pattern
+import yaml
 
 
 @dataclass
@@ -137,6 +140,42 @@ class SecretDetector:
         if custom_rules:
             self.rules.extend(custom_rules)
         self.excluded_ips = excluded_ips or {"127.0.0.1", "0.0.0.0", "255.255.255.255", "8.8.8.8", "1.1.1.1"}
+        self._load_user_config()
+
+    def _load_user_config(self) -> None:
+        """Load optional user config from ~/.config/maskshot/config.yaml or .maskshot.yaml"""
+        config_paths = [
+            Path.home() / ".config" / "maskshot" / "config.yaml",
+            Path.cwd() / ".maskshot.yaml",
+        ]
+        for p in config_paths:
+            if p.exists() and p.is_file():
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = yaml.safe_load(f) or {}
+
+                    # Custom literal keywords
+                    for kw in data.get("custom_keywords", []):
+                        if isinstance(kw, str) and kw.strip():
+                            self.add_keyword_rule(kw.strip())
+
+                    # Custom regexes
+                    for item in data.get("custom_rules", []):
+                        if isinstance(item, dict) and "pattern" in item:
+                            name = item.get("name", "Custom Rule")
+                            pat = item["pattern"]
+                            desc = item.get("description", "User custom rule")
+                            group = item.get("extract_group", 0)
+                            self.rules.append(
+                                DetectionRule(
+                                    name=name,
+                                    pattern=re.compile(pat),
+                                    description=desc,
+                                    extract_group=group,
+                                )
+                            )
+                except Exception:
+                    pass
 
     def add_keyword_rule(self, keyword: str, name: Optional[str] = None) -> None:
         """Add a specific literal keyword (e.g. your username or internal company name) to redact."""
@@ -167,7 +206,6 @@ class SecretDetector:
                 if not val:
                     continue
 
-                # Filter benign local/DNS IPs if rule is IPv4
                 if rule.name == "IPv4 Address" and val in self.excluded_ips:
                     continue
 

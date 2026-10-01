@@ -90,11 +90,31 @@ maskshot demo -o test.png
 
 ---
 
-## 🧠 How Does MaskShot Know What to Mask?
+## 🧠 How to Customize What Gets Masked
 
-All rules are defined in [`src/maskshot/detector.py`](src/maskshot/detector.py). 
+Want to mask your private company name, custom usernames, or internal secret keys? You can edit them easily without touching code!
 
-MaskShot uses high-accuracy **regular expressions (Regex)** designed specifically for credentials and PII:
+### Option 1: Simple Config File (`~/.config/maskshot/config.yaml`)
+Create or edit `~/.config/maskshot/config.yaml`:
+
+```yaml
+# Add any private words to always blur:
+custom_keywords:
+  - "MySecretProject"
+  - "SuperConfidentialCorp"
+  - "nikhil-private-server"
+
+# Add custom regex patterns:
+custom_rules:
+  - name: "Internal Employee ID"
+    pattern: "EMP-[0-9]{5}"
+    description: "Company badge number"
+```
+
+MaskShot will automatically read this file and blur your custom items!
+
+### Option 2: Edit Core Rules in Python
+All built-in patterns live in [`src/maskshot/detector.py`](src/maskshot/detector.py):
 
 | Type | How It Detects | Examples |
 |:---|:---|:---|
@@ -105,7 +125,7 @@ MaskShot uses high-accuracy **regular expressions (Regex)** designed specificall
 | **PII** | Email pattern (`user@domain.com`), 10-digit phone numbers (`+91...`), IPv4 addresses | Emails, Phone numbers, Server IPs |
 | **Config** | `password = "..."` or `SECRET_KEY = "..."` | Any password assigned in code or `.env` files |
 
-To see the live rules in your terminal:
+To see active rules right in your terminal:
 ```bash
 maskshot rules
 ```
