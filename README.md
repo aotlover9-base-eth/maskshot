@@ -57,6 +57,8 @@ maskshot sanitize screenshot.png -s pixelate -o clean.png
 maskshot sanitize screenshot.png -s blackout --badge -o clean.png
 ```
 
+![MaskShot Terminal Output](cli_demo.png)
+
 ### Background Watcher
 Auto-sanitize screenshots as they are saved to a directory:
 
