@@ -275,17 +275,49 @@ def demo_command(output: Path, style: RedactionStyle) -> None:
     detected = ocr.process_image(img, padding=5)
     redacted = redactor.redact(img, detected, style=style)
 
-    # Combine into side-by-side comparison
-    comp_w = w * 2 + 30
-    comp_h = h + 60
+    # Combine into side-by-side comparison with arrow divider
+    mid_gap = 140
+    comp_w = w * 2 + mid_gap + 60
+    comp_h = h + 80
     comparison = Image.new("RGB", (comp_w, comp_h), color=(15, 15, 18))
     comp_draw = ImageDraw.Draw(comparison)
 
-    comp_draw.text((36, 18), "ORIGINAL (LEAKED SECRETS ⚠️)", fill=(248, 113, 113), font=title_font)
-    comp_draw.text((w + 50, 18), f"MASKSHOT SANITIZED ({style.upper()} 🛡️)", fill=(52, 211, 153), font=title_font)
+    left_x = 30
+    right_x = left_x + w + mid_gap
+    top_y = 55
 
-    comparison.paste(img, (20, 50))
-    comparison.paste(redacted, (w + 30, 50))
+    comp_draw.text((left_x, 20), "ORIGINAL (LEAKED SECRETS ⚠️)", fill=(248, 113, 113), font=title_font)
+    comp_draw.text((right_x, 20), f"MASKSHOT SANITIZED ({style.upper()} 🛡️)", fill=(52, 211, 153), font=title_font)
+
+    comparison.paste(img, (left_x, top_y))
+    comparison.paste(redacted, (right_x, top_y))
+
+    # Draw Arrow in Middle Gap
+    mid_center_x = left_x + w + (mid_gap // 2)
+    mid_center_y = top_y + (h // 2)
+
+    # Central Pill badge
+    pill_w = 110
+    pill_h = 75
+    pill_x0 = mid_center_x - (pill_w // 2)
+    pill_y0 = mid_center_y - (pill_h // 2)
+    pill_x1 = pill_x0 + pill_w
+    pill_y1 = pill_y0 + pill_h
+
+    comp_draw.rounded_rectangle([pill_x0, pill_y0, pill_x1, pill_y1], radius=16, fill=(24, 24, 27), outline=(56, 189, 248), width=2)
+
+    arrow_font = get_preferred_font(size=22)
+    sub_font = get_preferred_font(size=13)
+
+    arrow_text = "➔"
+    abox = comp_draw.textbbox((0, 0), arrow_text, font=arrow_font)
+    aw = abox[2] - abox[0]
+    comp_draw.text((mid_center_x - aw // 2, pill_y0 + 10), arrow_text, fill=(56, 189, 248), font=arrow_font)
+
+    sub_text = "THIS  ➔  THIS"
+    sbox = comp_draw.textbbox((0, 0), sub_text, font=sub_font)
+    sw = sbox[2] - sbox[0]
+    comp_draw.text((mid_center_x - sw // 2, pill_y0 + 44), sub_text, fill=(244, 244, 245), font=sub_font)
 
     comparison.save(output)
     console.print(f"[bold green]✅ Demo card created successfully:[/bold green] [cyan]{output}[/cyan]")
